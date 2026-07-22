@@ -150,11 +150,30 @@ namespace NzbDrone.Core.Download.Clients.RQBit
             }
 
             failures.AddIfNotNull(TestVersion());
+            failures.AddIfNotNull(TestCategory());
         }
 
         private ValidationFailure TestConnection()
         {
             var version = _proxy.GetVersion(Settings);
+            return null;
+        }
+
+        private ValidationFailure TestCategory()
+        {
+            if (Settings.Category.IsNullOrWhiteSpace())
+            {
+                return null;
+            }
+
+            var categories = _proxy.GetCategories(Settings);
+
+            if (!categories.Contains(Settings.Category))
+            {
+                return new ValidationFailure("Category",
+                    $"Category '{Settings.Category}' does not exist. Available categories: {string.Join(", ", categories)}");
+            }
+
             return null;
         }
 

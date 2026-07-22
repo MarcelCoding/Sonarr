@@ -14,6 +14,7 @@ namespace NzbDrone.Core.Download.Clients.RQBit
         bool IsApiSupported(RQbitSettings settings);
         string GetVersion(RQbitSettings settings);
         List<RQBitTorrent> GetTorrents(RQbitSettings settings);
+        List<string> GetCategories(RQbitSettings settings);
         void RemoveTorrent(string hash, bool removeData, RQbitSettings settings);
         string AddTorrentFromUrl(string torrentUrl, RQbitSettings settings);
         string AddTorrentFromFile(string fileName, byte[] fileContent, RQbitSettings settings);
@@ -77,8 +78,13 @@ namespace NzbDrone.Core.Download.Clients.RQBit
 
         public List<RQBitTorrent> GetTorrents(RQbitSettings settings)
         {
+            var url = "/torrents?with_stats=true";
+            if (!settings.Category.IsNullOrWhiteSpace()) {
+                url += "&categories=" + settings.Category;
+            }
+
             var result = new List<RQBitTorrent>();
-            var request = BuildRequest(settings).Resource("/torrents?with_stats=true");
+            var request = BuildRequest(settings).Resource(url);
             var response = _httpClient.Get(request.Build());
 
             if (response.StatusCode != HttpStatusCode.OK)
@@ -144,6 +150,20 @@ namespace NzbDrone.Core.Download.Clients.RQBit
             return result;
         }
 
+        public List<string> GetCategories(RQbitSettings settings)
+        {
+            var request = BuildRequest(settings).Resource("/categories");
+            var response = _httpClient.Get(request.Build());
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                _logger.Error("Failed to get categories");
+                return new List<string>();
+            }
+
+            return JsonConvert.DeserializeObject<List<string>>(response.Content) ?? new List<string>();
+        }
+
         public void RemoveTorrent(string infoHash, bool removeData, RQbitSettings settings)
         {
             var endpoint = removeData ? "/delete" : "/forget";
@@ -153,7 +173,12 @@ namespace NzbDrone.Core.Download.Clients.RQBit
 
         public string AddTorrentFromUrl(string torrentUrl, RQbitSettings settings)
         {
-            var itemRequest = BuildRequest(settings).Resource("/torrents?overwrite=true").Post().Build();
+            var url = "/torrents?overwrite=true";
+            if (!settings.Category.IsNullOrWhiteSpace()) {
+                url += "&category=" + settings.Category;
+            }
+
+            var itemRequest = BuildRequest(settings).Resource(url).Post().Build();
             itemRequest.SetContent(torrentUrl);
             var httpResponse = _httpClient.Post(itemRequest);
 
@@ -174,9 +199,14 @@ namespace NzbDrone.Core.Download.Clients.RQBit
 
         public string AddTorrentFromFile(string fileName, byte[] fileContent, RQbitSettings settings)
         {
+            var url = "/torrents?overwrite=true";
+            if (!settings.Category.IsNullOrWhiteSpace()) {
+                url += "&category=" + settings.Category;
+            }
+
             var itemRequest = BuildRequest(settings)
                 .Post()
-                .Resource("/torrents?overwrite=true")
+                .Resource(url)
                 .Build();
             itemRequest.SetContent(fileContent);
             var httpResponse = _httpClient.Post(itemRequest);

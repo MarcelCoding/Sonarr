@@ -13,6 +13,7 @@ namespace NzbDrone.Core.Download.Clients.RQBit
             Host = "localhost";
             Port = 3030;
             UrlBase = "/";
+            Category = "";
         }
 
         [FieldDefinition(0, Label = "Host", Type = FieldType.Textbox)]
@@ -28,6 +29,10 @@ namespace NzbDrone.Core.Download.Clients.RQBit
         [FieldDefinition(3, Label = "UrlBase", Type = FieldType.Textbox, Advanced = true)]
         [FieldToken(TokenField.HelpText, "DownloadClientRQbitSettingsUrlBaseHelpText")]
         public string UrlBase { get; set; }
+
+        [FieldDefinition(4, Label = "Category", Type = FieldType.Textbox)]
+        [FieldToken(TokenField.HelpText, "DownloadClientRQbitSettingsCategoryHelpText")]
+        public string Category { get; set; }
 
         public override NzbDroneValidationResult Validate()
         {
